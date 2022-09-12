@@ -4,10 +4,14 @@ SHELL := /bin/bash
 # GO
 
 go-run:
-	go run app/services/sales-api/main.go
+	go run app/services/service-api/main.go
 
 go-build:
 	go build -ldflags "-X main.build=local"
+
+go-tidy:
+	go mod tidy
+	go mod vendor
 
 
 # ================================================================
@@ -19,15 +23,17 @@ docker-build: docker-build-service
 
 docker-build-service:
 	docker build \
-	-f zarf/docker/sales-api.dockerfile \
+	-f zarf/docker/service-api.dockerfile \
 	-t service-amd64:$(VERSION) \
 	--build-arg BUILD_REF=$(VERSION) \
 	--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 	.
 
+docker-run-service:
+	docker run service-amd64:$(VERSION)
+
 docker-sh-service:
 	docker run -it service-amd64:$(VERSION) sh
-
 
 # ================================================================
 # KIND
@@ -48,7 +54,7 @@ kind-load:
 	kind load docker-image service-amd64:$(VERSION) --name $(KIND_CLUSTER)
 
 kind-apply:
-	cat zarf/k8s/base/service-pod/base-service.yaml | kubectl apply -f -
+	kustomize build zarf/k8s/kind/service-pod | kubectl apply -f -
 
 kind-status:
 	kubectl get nodes -o wide
@@ -64,9 +70,11 @@ kind-logs:
 kind-restart:
 	kubectl rollout restart deployment service-pod
 
-kind-update: docker-build kind-load kind-restart
+kind-update-restart: docker-build kind-load kind-restart
+
+kind-update-apply: docker-build kind-load kind-apply
 
 kind-describe:
 	kubectl describe nodes
 	kubectl describe svc
-	kubectl describe pod -l app=sales
+	kubectl describe pod -l app=service
