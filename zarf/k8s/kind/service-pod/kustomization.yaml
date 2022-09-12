@@ -4,3 +4,7 @@ resources:
 - ../../base/service-pod/
 patchesStrategicMerge:
 - ./kind-service-patch.yaml
+images:
+- name: service-api-image
+  newName: service-amd64
+  newTag: "1.0"

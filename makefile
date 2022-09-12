@@ -17,6 +17,7 @@ go-tidy:
 # ================================================================
 # DOCKER
 
+IMAGE = service-amd64
 VERSION := 1.0
 
 docker-build: docker-build-service
@@ -24,16 +25,16 @@ docker-build: docker-build-service
 docker-build-service:
 	docker build \
 	-f zarf/docker/service-api.dockerfile \
-	-t service-amd64:$(VERSION) \
+	-t $(IMAGE):$(VERSION) \
 	--build-arg BUILD_REF=$(VERSION) \
 	--build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 	.
 
 docker-run-service:
-	docker run service-amd64:$(VERSION)
+	docker run $(IMAGE):$(VERSION)
 
 docker-sh-service:
-	docker run -it service-amd64:$(VERSION) sh
+	docker run -it $(IMAGE):$(VERSION) sh
 
 # ================================================================
 # KIND
@@ -51,6 +52,7 @@ kind-down:
 	kind delete cluster --name $(KIND_CLUSTER)
 
 kind-load:
+	cd zarf/k8s/kind/service-pod; kustomize edit set image service-api-image=$(IMAGE):$(VERSION)
 	kind load docker-image service-amd64:$(VERSION) --name $(KIND_CLUSTER)
 
 kind-apply:
