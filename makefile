@@ -1,10 +1,17 @@
 SHELL := /bin/bash
 
 # ================================================================
+# TOOLS
+
+# expvarmon -ports=":3000" -endpoint="/metrics" -vars="build,requests,goroutines,errors,panics,mem:memstats.Alloc"
+# expvarmon -ports=":4000" -vars="build,requests,goroutines,errors,panics,mem:memstats.Alloc"
+
+
+# ================================================================
 # GO
 
 go-run:
-	go run app/services/service-api/main.go
+	go run app/services/service-api/main.go | go run app/tooling/logfmt/main.go
 
 go-build:
 	go build -ldflags "-X main.build=local"
