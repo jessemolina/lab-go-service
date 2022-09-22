@@ -74,7 +74,7 @@ kind-status-service:
 	kubectl get pods -o wide --watch
 
 kind-logs:
-	kubectl logs -l app=service --all-containers=true -f --tail=100
+	kubectl logs -l app=service --all-containers=true -f --tail=100 | go run app/tooling/logfmt/main.go
 
 kind-restart:
 	kubectl rollout restart deployment service-pod
