@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"expvar"
 	"fmt"
@@ -24,6 +25,7 @@ func main() {
 
 	// ================================================================
 	// LOGGER
+	// create a logger to be used across the service
 
 	// create initial logger and defer
 	log, err := initLogger("SERVICE-API")
@@ -35,7 +37,8 @@ func main() {
 	defer log.Sync()
 
 	// ================================================================
-	// SHUTDOWN
+	// RUN
+	// run the service
 
 	// run service with given logger
 	if err := run(log); err != nil {
@@ -43,14 +46,14 @@ func main() {
 		os.Exit(1)
 	}
 
-
 }
 
 // run service start up
 func run(log *zap.SugaredLogger) error {
 
 	// ================================================================
-	// GOMAXPROCS
+	// QUOTAS
+	// set resource limits
 
 	// set the cpu quota
 	if _, err := maxprocs.Set(); err != nil {
@@ -62,6 +65,7 @@ func run(log *zap.SugaredLogger) error {
 
 	// ================================================================
 	// CONFIGURATION
+	// set service configurations
 
 	// struct to create dynamic for flags and environment variables
 	cfg := struct {
@@ -92,10 +96,9 @@ func run(log *zap.SugaredLogger) error {
 		return fmt.Errorf("parsing config: %w", err)
 	}
 
-
-
 	// ================================================================
 	// STARTUP
+	// initiate service
 
 	// log start up and shutdown
 	log.Infow("starting service", "version", build)
@@ -112,16 +115,16 @@ func run(log *zap.SugaredLogger) error {
 	expvar.NewString("build").Set(build)
 
 	// ================================================================
-	// DEBUG
-	//
+	// DEBUG API
+	// enable debug endpoints
 
 	// log debug startup
 	log.Infow("startup", "status", "debug router started", cfg.Web.DebugHost)
 
-	// TODO construct mux to serve debug calls
+	// construct mux to serve debug calls
 	debugMux := handlers.DebugStandardLibraryMux()
 
-	// TODO start service listening for debug requests
+	// start service listening for debug requests
 	go func() {
 		if err := http.ListenAndServe(cfg.Web.DebugHost, debugMux); err != nil {
 			log.Errorw("shutdown", "status", "debug router closed", "host", cfg.Web.DebugHost, "ERROR", err)
@@ -129,15 +132,64 @@ func run(log *zap.SugaredLogger) error {
 	}()
 
 	// ================================================================
-	// SHUTDOWN
+	// SERVICE API
+	// enable service endpoints
+
+	// log service startup
+	log.Infow("startup", "status", "initializing service API")
 
 	// make a channel with 1 buffer for an os.Signal
 	// block on the channel until it receives either SIGINT or SIGTERM
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-	<-shutdown
+
+	// server struct to be used against the mux
+	api := http.Server{
+		Addr:         cfg.Web.APIHost,
+		Handler:      nil,
+		ReadTimeout:  cfg.Web.ReadTimeout,
+		WriteTimeout: cfg.Web.WriteTimeout,
+		IdleTimeout:  cfg.Web.IdleTimeout,
+		ErrorLog:     zap.NewStdLog(log.Desugar()),
+	}
+
+	// make a channel for errors coming from the listener
+	// use a buffered chanel for the goroutine to exit
+	serverErrors := make(chan error, 1)
+
+	// start service listening for api requests
+	go func() {
+		log.Infow("startup", "status", "api router started", "host", api.Addr)
+		serverErrors <- api.ListenAndServe()
+	}()
+
+	// ================================================================
+	// SHUTDOWN
+	// perform load shedding to shutdown service
+
+	// block main and wait for shutdown
+	select {
+	case err := <-serverErrors:
+		return fmt.Errorf("server error: %w", err)
+
+	case sig := <-shutdown:
+		// log shutdown sequence
+		log.Infow("shutdown", "status", "shutdown started", "signal", sig)
+		defer log.Infow("shutdown", "status", "shutdown complete", "signal", sig)
+
+		// set deadline for outstanding requests
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
+		defer cancel()
+
+		// ask listener to shutdown and shed load
+		if err := api.Shutdown(ctx); err != nil {
+			api.Close()
+			return fmt.Errorf("could not stop server gracefully: %w", err)
+		}
+	}
 
 	return nil
+
 }
 
 // build initial zap sugared logger
