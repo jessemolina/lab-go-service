@@ -122,7 +122,7 @@ func run(log *zap.SugaredLogger) error {
 	log.Infow("startup", "status", "debug router started", cfg.Web.DebugHost)
 
 	// construct mux to serve debug calls
-	debugMux := handlers.DebugStandardLibraryMux()
+	debugMux := handlers.DebugMux(build, log)
 
 	// start service listening for debug requests
 	go func() {
@@ -143,10 +143,17 @@ func run(log *zap.SugaredLogger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
+	//construct the mux for api calls
+	// value that implements the http handler
+	apiMux := handlers.APIMux(handlers.APIMuxConfig{
+		Shutdown: shutdown,
+		Log:      log,
+	})
+
 	// server struct to be used against the mux
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      nil,
+		Handler:      apiMux,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 		IdleTimeout:  cfg.Web.IdleTimeout,
@@ -189,7 +196,6 @@ func run(log *zap.SugaredLogger) error {
 	}
 
 	return nil
-
 }
 
 // build initial zap sugared logger
