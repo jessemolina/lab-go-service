@@ -31,3 +31,42 @@ func DebugStandardLibraryMux() *http.ServeMux {
 
 	return mux
 }
+
+// debugmux registers both standard library  routes and our own custom
+// debug application routes; bypass DefaultServeMux due to security concerns
+func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
+	mux := DebugStandardLibraryMux()
+
+	cgh := checkgrp.Handlers{
+		Build: build,
+		Log: log,
+	}
+
+	mux.HandleFunc("/debug/readiness", cgh.Readiness)
+	mux.HandleFunc("/debug/liveness", cgh.Liveness)
+
+	return mux
+}
+
+
+// service api mux
+func APIMux(cfg APIMuxConfig) *httptreemux.ContextMux {
+	// create a new mux
+	mux := httptreemux.NewContextMux()
+
+	tgh := testgrp.Handlers{
+		Log: cfg.Log,
+	}
+	mux.Handle(http.MethodGet, "/v1/test", tgh.Test)
+
+	return mux
+}
+
+// ================================================================
+// TYPES
+
+// config contains all mandatory systems required by handlers
+type APIMuxConfig struct {
+	Shutdown chan os.Signal
+	Log      *zap.SugaredLogger
+}
