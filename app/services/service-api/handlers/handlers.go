@@ -4,10 +4,18 @@ import (
 	"expvar"
 	"net/http"
 	"net/http/pprof"
+	"os"
+
+	"github.com/dimfeld/httptreemux/v5"
+	"github.com/jessemolina/ultimate-service/app/services/service-api/handlers/debug/checkgrp"
+	"github.com/jessemolina/ultimate-service/app/services/service-api/handlers/v1/testgrp"
+	"go.uber.org/zap"
 )
 
-// registers all debug routes from standard library
-// using a new serve mux
+// ================================================================
+// FUNCTIONS
+
+// registers all debug routes from standard library to new mux
 func DebugStandardLibraryMux() *http.ServeMux {
 	mux := http.NewServeMux()
 
