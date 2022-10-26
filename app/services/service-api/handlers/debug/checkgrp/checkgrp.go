@@ -11,7 +11,7 @@ import (
 // ================================================================
 // FUNCTIONS
 
-// converts data to http response with proper header and status code
+// converts data struct to http response with proper header and status code
 func response(w http.ResponseWriter, statusCode int, data interface{}) error {
 
 	// convert the response to JSON
