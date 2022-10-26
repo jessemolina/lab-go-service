@@ -6,9 +6,9 @@ import (
 	"net/http/pprof"
 	"os"
 
-	"github.com/dimfeld/httptreemux/v5"
 	"github.com/jessemolina/ultimate-service/app/services/service-api/handlers/debug/checkgrp"
 	"github.com/jessemolina/ultimate-service/app/services/service-api/handlers/v1/testgrp"
+	"github.com/jessemolina/ultimate-service/foundation/web"
 	"go.uber.org/zap"
 )
 
@@ -50,16 +50,16 @@ func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
 
 
 // service api mux
-func APIMux(cfg APIMuxConfig) *httptreemux.ContextMux {
+func APIMux(cfg APIMuxConfig) *web.App {
 	// create a new mux
-	mux := httptreemux.NewContextMux()
+	app := web.NewApp(cfg.Shutdown)
 
 	tgh := testgrp.Handlers{
 		Log: cfg.Log,
 	}
-	mux.Handle(http.MethodGet, "/v1/test", tgh.Test)
+	app .Handle(http.MethodGet, "/v1/test", tgh.Test)
 
-	return mux
+	return app
 }
 
 // ================================================================
