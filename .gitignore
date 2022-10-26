@@ -1,8 +1,12 @@
+# igonore common
 .DS_Store
 .idea
 *.log
-
-tmp/
 *.swp
+tmp/
 
+# ignore vedor
 vendor/
+
+# ignore png
+*.png
