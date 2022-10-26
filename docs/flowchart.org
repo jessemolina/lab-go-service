@@ -24,7 +24,6 @@ end
 #+RESULTS:
 [[file:main.png]]
 
-
 *** service-api
 
 #+begin_src mermaid :file service-api.png
@@ -138,7 +137,7 @@ API set of handlers.
 * foundation
 *** web
 
-#+begin_src mermaid
+#+begin_src mermaid :file web.png
 flowchart LR
 subgraph web
   web.App
@@ -147,16 +146,4 @@ httptreemux.ContextMux & http.Handler & os.Signal -.-> web.App
 #+end_src
 
 #+RESULTS:
-[[file:main.png]]
-
-#+begin_src mermaid
-flowchart TB
- A --> B
- subgraph C
-   C.Explain --> C.Create
- end
-B -.-> C
-#+end_src
-
-#+RESULTS:
-[[file:main.png]]
+[[file:web.png]]
