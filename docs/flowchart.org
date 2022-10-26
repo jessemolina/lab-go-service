@@ -3,9 +3,15 @@
 :END:
 #+title: Flowchart
 
+This is a broad programmatic flowchart representation of the service being developed.
+
 * app
 
+The app directory serves as the presentation layer of the service.
+
 ** services
+Services for the application.
+
 #+begin_src mermaid
 flowchart LR
 subgraph main
@@ -26,6 +32,8 @@ end
 
 *** service-api
 
+Generic "service" api; serves as a template for building any kind of api.
+
 #+begin_src mermaid :file service-api.png
 flowchart TB
 subgraph service-api
@@ -45,7 +53,7 @@ end
 
 **** handlers
 
-The package /handlers/ will contain nested groups for the type of handlers used.
+The package /handlers/ will contain nested groups for the type of handlers used provided in the api.
 
 #+begin_src mermaid :file service-api.handlers.png
 flowchart LR
@@ -86,11 +94,6 @@ zap.SugaredLogger -.-> checkgrp.Handlers
 ****** checkgrp
 Responsible for the readiness and liveness of the service.
 
-The mux is expecting an interface with the specified signature.
-Without adding additional parameters for the log, we can't change the signature to prevent breaking the interface.
-Alternatively, the function can be implemented with a method of the same signature.
-The logger can then be embedded in the Handlers struct, allowing us with a way to pass the logger.
-
 #+begin_src go
 type Handlers struct {
 	Build string
@@ -120,6 +123,8 @@ func (h Handlers) Readiness(w http.ResponseWriter, r *http.Request) {
 
 ***** v1
 
+Version One of the api.
+
 #+begin_src mermaid :file v1.png
 flowchart LR
 subgraph v1
@@ -132,10 +137,12 @@ zap.SugaredLogger -.-> testgrp.Handlers
 [[file:v1.png]]
 
 
-API set of handlers.
-****** testgrp
 * foundation
+Stand alone collection of packages that can be used across multiple projects.
+
 *** web
+
+Manages web application functionaility, including mux, context, and shutdown.
 
 #+begin_src mermaid :file web.png
 flowchart LR
