@@ -1,0 +1,162 @@
+:PROPERTIES:
+:header-args: :theme neutral :background-color transparent :file main.png
+:END:
+#+title: Flowchart
+
+* app
+
+** services
+#+begin_src mermaid
+flowchart LR
+subgraph main
+  cfg[cfg := struct]
+  debugMux[debugMux := http.Handler] -.-> http.Server
+  apiMux[apiMux := httptreemux.ContextMux] -.-> api[api := http.Server]
+  log[log := zap.SugaredLogger] -.-> api & debugMux
+  cfg -.-> debugMux & api
+end
+subgraph service-api
+handlers -- handlers.DebugMux --> debugMux
+handlers -- handlers.APIMux --> apiMux
+end
+#+end_src
+
+#+RESULTS:
+[[file:main.png]]
+
+
+*** service-api
+
+#+begin_src mermaid :file service-api.png
+flowchart TB
+subgraph service-api
+  subgraph handlers
+    subgraph debug
+      checkgrp
+    end
+    subgraph v1
+      testgrp
+    end
+  end
+end
+#+end_src
+
+#+RESULTS:
+[[file:service-api.png]]
+
+**** handlers
+
+The package /handlers/ will contain nested groups for the type of handlers used.
+
+#+begin_src mermaid :file service-api.handlers.png
+flowchart LR
+subgraph handlers
+  subgraph debug
+    checkgrp.Handlers -.-> http.Handler
+  end
+  subgraph v1
+    testgrp.Handlers -.-> web.App
+  end
+  zap.SugaredLogger & os.Signal -.-> APIMuxConfig[APIMuxConfig := struct]
+  APIMuxConfig -.-> web.App
+end
+subgraph web
+  httptreemux.ContextMux -.-> web.App2[web.App]
+end
+http.Handler -- handler.DebugMux --> main
+web.App2 -.-> web.App
+web.App -- handler.APIMux --> main
+#+end_src
+
+#+RESULTS:
+[[file:service-api.handlers.png]]
+***** debug
+The debug set of handlers.
+
+#+begin_src mermaid :file debug.png
+flowchart LR
+subgraph debug
+  checkgrp.Handlers
+end
+zap.SugaredLogger -.-> checkgrp.Handlers
+#+end_src
+
+#+RESULTS:
+[[file:debug.png]]
+
+****** checkgrp
+Responsible for the readiness and liveness of the service.
+
+The mux is expecting an interface with the specified signature.
+Without adding additional parameters for the log, we can't change the signature to prevent breaking the interface.
+Alternatively, the function can be implemented with a method of the same signature.
+The logger can then be embedded in the Handlers struct, allowing us with a way to pass the logger.
+
+#+begin_src go
+type Handlers struct {
+	Build string
+	Log *zap.SugaredLogger
+}
+#+end_src
+
+#+begin_src go
+// checks that the application services are ready
+func (h Handlers) Readiness(w http.ResponseWriter, r *http.Request) {
+	data := struct {
+		Status string `json:"status"`
+	}{
+		Status: "OK",
+	}
+	statusCode := http.StatusOK
+
+	if err := response(w, statusCode, data); err != nil{
+		h.Log.Errorw("readiness", "ERROR", err)
+	}
+
+	h.Log.Infow("readiness", "statusCode", statusCode, "method", r.Method, "path", r.URL.Path, "remoteaddr", r.RemoteAddr)
+
+}
+#+end_src
+
+
+***** v1
+
+#+begin_src mermaid :file v1.png
+flowchart LR
+subgraph v1
+  testgrp.Handlers
+end
+zap.SugaredLogger -.-> testgrp.Handlers
+#+end_src
+
+#+RESULTS:
+[[file:v1.png]]
+
+
+API set of handlers.
+****** testgrp
+* foundation
+*** web
+
+#+begin_src mermaid
+flowchart LR
+subgraph web
+  web.App
+end
+httptreemux.ContextMux & http.Handler & os.Signal -.-> web.App
+#+end_src
+
+#+RESULTS:
+[[file:main.png]]
+
+#+begin_src mermaid
+flowchart TB
+ A --> B
+ subgraph C
+   C.Explain --> C.Create
+ end
+B -.-> C
+#+end_src
+
+#+RESULTS:
+[[file:main.png]]
