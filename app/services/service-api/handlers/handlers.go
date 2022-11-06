@@ -39,7 +39,7 @@ func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
 
 	cgh := checkgrp.Handlers{
 		Build: build,
-		Log: log,
+		Log:   log,
 	}
 
 	mux.HandleFunc("/debug/readiness", cgh.Readiness)
@@ -48,24 +48,30 @@ func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
 	return mux
 }
 
-
-// service api mux
+// Create a web app with service api mux.
 func APIMux(cfg APIMuxConfig) *web.App {
-	// create a new mux
-	app := web.NewApp(cfg.Shutdown)
+	app := web.NewApp(
+		cfg.Shutdown,
+	)
 
+	v1(app, cfg)
+
+	return app
+}
+
+// Binds all of the version 1 routes.
+func v1(app *web.App, cfg APIMuxConfig) {
 	tgh := testgrp.Handlers{
 		Log: cfg.Log,
 	}
-	app .Handle(http.MethodGet, "/v1/test", tgh.Test)
+	app.Handle(http.MethodGet, "v1", "/test", tgh.Test)
 
-	return app
 }
 
 // ================================================================
 // TYPES
 
-// config contains all mandatory systems required by handlers
+// Config contains all mandatory systems required by handlers.
 type APIMuxConfig struct {
 	Shutdown chan os.Signal
 	Log      *zap.SugaredLogger
