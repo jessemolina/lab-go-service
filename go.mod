@@ -1,4 +1,4 @@
-module github.com/jessemolina/ultimate-service
+module github.com/jessemolina/lab-go-service
 
 go 1.18
 
