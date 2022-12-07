@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jessemolina/ultimate-service/foundation/web"
+	"github.com/jessemolina/lab-go-service/pkg/web"
 	"go.uber.org/zap"
 )
 

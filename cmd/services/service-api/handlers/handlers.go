@@ -6,9 +6,9 @@ import (
 	"net/http/pprof"
 	"os"
 
-	"github.com/jessemolina/ultimate-service/app/services/service-api/handlers/debug/checkgrp"
-	"github.com/jessemolina/ultimate-service/app/services/service-api/handlers/v1/testgrp"
-	"github.com/jessemolina/ultimate-service/foundation/web"
+	"github.com/jessemolina/lab-go-service/cmd/services/service-api/handlers/debug/checkgrp"
+	"github.com/jessemolina/lab-go-service/cmd/services/service-api/handlers/v1/testgrp"
+	"github.com/jessemolina/lab-go-service/pkg/web"
 	"go.uber.org/zap"
 )
 
