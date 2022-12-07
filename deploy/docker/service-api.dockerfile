@@ -6,7 +6,7 @@ ARG BUILD_REF
 
 COPY . /service
 
-WORKDIR /service/app/services/service-api
+WORKDIR /service/cmd/services/service-api
 RUN go build -ldflags "-X main.build=${BUILD_REF}"
 
 # ================================================================
@@ -19,7 +19,7 @@ ARG BUILD_REF
 RUN addgroup -g 1000 -S service && \
     adduser -u 1000 -h /service -G service -S service
 
-COPY --from=build_service-api --chown=service:service /service/app/services/service-api/service-api /service/service-api
+COPY --from=build_service-api --chown=service:service /service/cmd/services/service-api/service-api /service/service-api
 
 WORKDIR /service
 USER service
