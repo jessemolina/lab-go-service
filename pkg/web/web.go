@@ -10,24 +10,12 @@ import (
 )
 
 // ================================================================
-// FUNCTIONS
-
-// Create web app with default mux and shutdown.
-func NewApp(shutdown chan os.Signal, mw ...Middleware) *App {
-	return &App{
-		ContextMux: httptreemux.NewContextMux(),
-		shutdown:   shutdown,
-		mw:         mw,
-	}
-}
-
-// ================================================================
 // TYPES
 
 // A custom handler function that adds context to http requests.
 type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
-// Web App that provides mux and defaults.
+// Web App that embeds a mux, signals, and middleware.
 type App struct {
 	*httptreemux.ContextMux
 	shutdown chan os.Signal
@@ -40,24 +28,19 @@ func (a *App) Handle(method string, group string, path string, handler Handler, 
 	// Wrap mw specific handlers around the original handler.
 	handler = wrapMiddleware(mw, handler)
 
-	// Warap the application's general middeware to the handler chain.
+	// Wrap the application's general middeware to the handler chain.
 	handler = wrapMiddleware(a.mw, handler)
 
-	// TODO Inject processing:
-	// logging started
+	// The function for each request.
 	h := func(w http.ResponseWriter, r *http.Request) {
 
 		if err := handler(r.Context(), w, r); err != nil {
-
-			// TODO Inject web app hanlder error handling.
 			return
 		}
 
 	}
 
-	// TODO Inject postcode processing:
-	// logging ended
-
+	// Set the endpoint's full path.
 	finalPath := path
 	if group != "" {
 		finalPath = "/" + group + path
@@ -70,4 +53,16 @@ func (a *App) Handle(method string, group string, path string, handler Handler, 
 // Shutdown web application.
 func (a *App) SignalShutdown() {
 	a.shutdown <- syscall.SIGTERM
+}
+
+// ================================================================
+// FUNCTIONS
+
+// Create web app with default mux and shutdown.
+func NewApp(shutdown chan os.Signal, mw ...Middleware) *App {
+	return &App{
+		ContextMux: httptreemux.NewContextMux(),
+		shutdown:   shutdown,
+		mw:         mw,
+	}
 }

@@ -6,6 +6,9 @@ import (
 	"net/http"
 )
 
+// ================================================================
+// FUNCTIONS
+
 // Converts a Go value into JSON to be sent to the client.
 func Respond(ctx context.Context, w http.ResponseWriter, data interface{}, statusCode int) error {
 
