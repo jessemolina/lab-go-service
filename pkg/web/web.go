@@ -1,3 +1,4 @@
+// Package web provides a small web framework extension.
 package web
 
 import (
@@ -10,22 +11,35 @@ import (
 )
 
 // ================================================================
+// FUNCTIONS
+
+// Create a web application with embedded mux to handle routes and middlware.
+func NewApp(shutdown chan os.Signal, mw ...Middleware) *App {
+	return &App{
+		ContextMux: httptreemux.NewContextMux(),
+		shutdown:   shutdown,
+		mw:         mw,
+	}
+}
+
+// ================================================================
 // TYPES
 
-// A custom handler function that adds context to http requests.
+// A handler function type used to handle http request with context.
 type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
-// Web App that embeds a mux, signals, and middleware.
+// A web application type that embeds a mux, signal, and middleware.
 type App struct {
 	*httptreemux.ContextMux
 	shutdown chan os.Signal
 	mw       []Middleware
 }
 
-// Set a handler function for given HTTP method and path to the application server mux.
+// Sets a handler function for given HTTP method and path pair
+// to the application server mux.
 func (a *App) Handle(method string, group string, path string, handler Handler, mw ...Middleware) {
 
-	// Wrap mw specific handlers around the original handler.
+	// Wrap specific middleware around the provided handler.
 	handler = wrapMiddleware(mw, handler)
 
 	// Wrap the application's general middeware to the handler chain.
@@ -34,6 +48,7 @@ func (a *App) Handle(method string, group string, path string, handler Handler, 
 	// The function for each request.
 	h := func(w http.ResponseWriter, r *http.Request) {
 
+		// Call the wrapped handler functions.
 		if err := handler(r.Context(), w, r); err != nil {
 			return
 		}
@@ -46,6 +61,7 @@ func (a *App) Handle(method string, group string, path string, handler Handler, 
 		finalPath = "/" + group + path
 	}
 
+	// Handle
 	a.ContextMux.Handle(method, finalPath, h)
 
 }
@@ -55,14 +71,3 @@ func (a *App) SignalShutdown() {
 	a.shutdown <- syscall.SIGTERM
 }
 
-// ================================================================
-// FUNCTIONS
-
-// Create web app with default mux and shutdown.
-func NewApp(shutdown chan os.Signal, mw ...Middleware) *App {
-	return &App{
-		ContextMux: httptreemux.NewContextMux(),
-		shutdown:   shutdown,
-		mw:         mw,
-	}
-}
