@@ -12,6 +12,9 @@ import (
 // Converts a Go value into JSON to be sent to the client.
 func Respond(ctx context.Context, w http.ResponseWriter, data interface{}, statusCode int) error {
 
+	// Set the status code for the request logger middleware.
+	SetStatusCode(ctx, statusCode)
+
 	// Write 204 if there's nothing to marshal and return nil.
 	if statusCode == http.StatusNoContent {
 		w.WriteHeader(statusCode)
