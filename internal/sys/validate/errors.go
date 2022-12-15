@@ -6,6 +6,13 @@ import (
 )
 
 // ================================================================
+// GLOBALS
+
+// Error is for when ID is not in a valid form.
+var ErrInvalidID = errors.New("ID is not in the proper form.")
+
+
+// ================================================================
 // FUNCTIONS
 
 // Wraps a provided error with an HTTP status code.
@@ -28,9 +35,6 @@ func Cause(err error) error {
 
 // ================================================================
 // TYPES
-
-// Error is for when ID is not in a valid form.
-var ErrInvalidID = errors.New("ID is not in the proper form.")
 
 // The form used for API response from failures in the API.
 type ErrorResponse struct {

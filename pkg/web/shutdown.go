@@ -12,7 +12,6 @@ import (
 // a graceful shutdown.
 func NewShutdownError(message string) error {
 	return &shutdownError{message}
-
 }
 
 // Checks to see if the shutdown error is contained
