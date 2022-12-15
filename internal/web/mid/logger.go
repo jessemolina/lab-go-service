@@ -12,7 +12,10 @@ import (
 // ================================================================
 // FUNCTIONS
 
-// A web Middlerware is a function that accepts and returns a handler.
+// Create a zap.SugaredLogger middlware function;
+// a function that accepts and returns a handler.
+// This function enables tracing and logging before/after
+// top layered web.Handler.
 func Logger(log *zap.SugaredLogger) web.Middleware {
 
 	// Create an anonymous middleware function;
@@ -23,17 +26,20 @@ func Logger(log *zap.SugaredLogger) web.Middleware {
 		// closure enables the use of parameters that exist outside of the scope of this function.
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			traceID := "00000000000000000000"
-			statuscode := http.StatusOK
-			now := time.Now()
+			// If the context is missing this value, request the service
+			// to be shutdown gracefully
+			v, err := web.GetValues(ctx)
+			if err != nil {
+				return err
+			}
 
-			log.Infow("request started", "traceid", traceID, "method", r.Method, "path", r.URL.Path,
+			log.Infow("request started", "traceid", v.TraceID, "method", r.Method, "path", r.URL.Path,
 				"remoteaddr", r.RemoteAddr)
 
-			err := handler(ctx, w, r)
+			err = handler(ctx, w, r)
 
-			log.Infow("request completed", "traceid", traceID, "method", r.Method, "path", r.URL.Path,
-				"remoteaddr", r.RemoteAddr, "statuscode", statuscode, "since", time.Since(now))
+			log.Infow("request completed", "traceid", v.TraceID, "method", r.Method, "path", r.URL.Path,
+				"remoteaddr", r.RemoteAddr, "statuscode", v.StatusCode, "since", time.Since(v.Now))
 
 			return err
 		}
