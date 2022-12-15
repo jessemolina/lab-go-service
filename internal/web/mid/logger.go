@@ -12,7 +12,7 @@ import (
 // ================================================================
 // FUNCTIONS
 
-//
+// A web Middlerware is a function that accepts and returns a handler.
 func Logger(log *zap.SugaredLogger) web.Middleware {
 
 	// Create an anonymous middleware function;
@@ -20,7 +20,7 @@ func Logger(log *zap.SugaredLogger) web.Middleware {
 	m := func(handler web.Handler) web.Handler {
 
 		// Create an anonymous function for web.Handler;
-		// a function that accepts a ctx, w, and r.
+		// closure enables the use of parameters that exist outside of the scope of this function.
 		h := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 			traceID := "00000000000000000000"
