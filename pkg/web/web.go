@@ -1,3 +1,4 @@
+// Package web provides a small web framework extension.
 package web
 
 import (
@@ -5,14 +6,16 @@ import (
 	"net/http"
 	"os"
 	"syscall"
+	"time"
 
 	"github.com/dimfeld/httptreemux/v5"
+	"github.com/google/uuid"
 )
 
 // ================================================================
 // FUNCTIONS
 
-// Create web app with default mux and shutdown.
+// Create a web application with embedded mux to handle routes and middlware.
 func NewApp(shutdown chan os.Signal, mw ...Middleware) *App {
 	return &App{
 		ContextMux: httptreemux.NewContextMux(),
@@ -24,45 +27,56 @@ func NewApp(shutdown chan os.Signal, mw ...Middleware) *App {
 // ================================================================
 // TYPES
 
-// A custom handler function that adds context to http requests.
+// A handler function type used to handle http request with context.
 type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
-// Web App that provides mux and defaults.
+// A web application type that embeds a mux, signal, and middleware.
 type App struct {
 	*httptreemux.ContextMux
 	shutdown chan os.Signal
 	mw       []Middleware
 }
 
-// Set a handler function for given HTTP method and path to the application server mux.
+// Sets a handler function for given HTTP method and path pair
+// to the application server mux.
 func (a *App) Handle(method string, group string, path string, handler Handler, mw ...Middleware) {
 
-	// Wrap mw specific handlers around the original handler.
+	// Wrap specific middleware around the provided handler.
 	handler = wrapMiddleware(mw, handler)
 
-	// Warap the application's general middeware to the handler chain.
+	// Wrap the application's general middeware to the handler chain.
 	handler = wrapMiddleware(a.mw, handler)
 
-	// TODO Inject processing:
-	// logging started
+	// The function for each request.
 	h := func(w http.ResponseWriter, r *http.Request) {
 
-		if err := handler(r.Context(), w, r); err != nil {
+		// Pull the context from the request and
+		// use it as a separate parameter.
+		ctx := r.Context()
 
-			// TODO Inject web app hanlder error handling.
+		// Set the context with the required values to
+		// process the request.
+		v := Values{
+			TraceID: uuid.New().String(),
+			Now:     time.Now(),
+		}
+		ctx = context.WithValue(ctx, key, &v)
+
+		// Call the wrapped handler functions.
+		if err := handler(ctx, w, r); err != nil {
+			a.SignalShutdown()
 			return
 		}
 
 	}
 
-	// TODO Inject postcode processing:
-	// logging ended
-
+	// Set the endpoint's full path.
 	finalPath := path
 	if group != "" {
 		finalPath = "/" + group + path
 	}
 
+	// Handle
 	a.ContextMux.Handle(method, finalPath, h)
 
 }

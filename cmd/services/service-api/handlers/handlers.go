@@ -6,11 +6,13 @@ import (
 	"net/http/pprof"
 	"os"
 
-	"github.com/jessemolina/ultimate-service/app/services/service-api/handlers/debug/checkgrp"
-	"github.com/jessemolina/ultimate-service/app/services/service-api/handlers/v1/testgrp"
-	"github.com/jessemolina/ultimate-service/foundation/web"
+	"github.com/jessemolina/lab-go-service/cmd/services/service-api/handlers/debug/checkgrp"
+	"github.com/jessemolina/lab-go-service/cmd/services/service-api/handlers/v1/testgrp"
+	"github.com/jessemolina/lab-go-service/pkg/web"
+	"github.com/jessemolina/lab-go-service/internal/web/mid"
 	"go.uber.org/zap"
 )
+
 
 // ================================================================
 // FUNCTIONS
@@ -52,6 +54,7 @@ func DebugMux(build string, log *zap.SugaredLogger) http.Handler {
 func APIMux(cfg APIMuxConfig) *web.App {
 	app := web.NewApp(
 		cfg.Shutdown,
+		mid.Logger(cfg.Log),
 	)
 
 	v1(app, cfg)

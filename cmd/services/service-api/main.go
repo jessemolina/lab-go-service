@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf"
-	"github.com/jessemolina/ultimate-service/app/services/service-api/handlers"
+	"github.com/jessemolina/lab-go-service/cmd/services/service-api/handlers"
 	"go.uber.org/automaxprocs/maxprocs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
